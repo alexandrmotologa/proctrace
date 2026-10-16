@@ -1,0 +1,159 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <clipPath id="squircle-clip">
+      <rect x="24" y="24" width="976" height="976" rx="220" />
+    </clipPath>
+
+    <linearGradient id="cyan-optic" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00f5ff"/>
+      <stop offset="100%" stop-color="#0284c7"/>
+    </linearGradient>
+
+    <linearGradient id="amber-pulse" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fbbf24"/>
+      <stop offset="100%" stop-color="#ea580c"/>
+    </linearGradient>
+
+    <linearGradient id="slate-metal" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#334155"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+
+    <linearGradient id="dark-plate" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1e293b"/>
+      <stop offset="100%" stop-color="#020617"/>
+    </linearGradient>
+
+    <filter id="subtle-shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="14" stdDeviation="18" flood-color="#000000" flood-opacity="0.14" />
+    </filter>
+  </defs>
+
+  <!-- Luxury White Squircle Container -->
+  <rect x="24" y="24" width="976" height="976" rx="220" fill="#ffffff" stroke="#e2e8f0" stroke-width="6" />
+
+  <g clip-path="url(#squircle-clip)">
+    <g transform="translate(512, 512)" filter="url(#subtle-shadow)">
+
+      <!-- Hexagonal Architectural Gateway -->
+      <polygon points="
+        0,-390
+        338,-195
+        338,195
+        0,390
+        -338,195
+        -338,-195
+      " fill="none" stroke="#0f172a" stroke-width="40" stroke-linejoin="round" />
+
+      <polygon points="
+        0,-355
+        307,-177
+        307,177
+        0,355
+        -307,177
+        -307,-177
+      " fill="none" stroke="#00f5ff" stroke-width="4" opacity="0.45" stroke-dasharray="16, 12" />
+
+      <!-- Corner Telemetry Nodes -->
+      <circle cx="0" cy="-390" r="8" fill="#00f5ff" />
+      <circle cx="338" cy="-195" r="8" fill="#00f5ff" />
+      <circle cx="338" cy="195" r="8" fill="#00f5ff" />
+      <circle cx="0" cy="390" r="8" fill="#00f5ff" />
+      <circle cx="-338" cy="195" r="8" fill="#00f5ff" />
+      <circle cx="-338" cy="-195" r="8" fill="#00f5ff" />
+
+      <!-- Watertight Silhouette Underlay (Zero-Leak Base) -->
+      <path d="
+        M 0 -190
+        L 85 -205 L 165 -320 L 195 -215 L 180 -110 L 255 -50 L 285 45 L 225 140 L 255 285 L 0 355
+        L -255 285 L -225 140 L -285 45 L -255 -50 L -180 -110 L -195 -215 L -165 -320 L -85 -205
+        Z
+      " fill="#0b0f19" />
+
+      <!-- ================= LOW-POLY FACETS (LYNX MASCOT) ================= -->
+
+      <!-- Ear Tufts (Acoustic Radar Antennas) -->
+      <polygon points="165,-320 185,-250 145,-240" fill="#00f5ff" opacity="0.9" />
+      <polygon points="-165,-320 -185,-250 -145,-240" fill="#00f5ff" opacity="0.9" />
+      
+      <!-- Outer Ears -->
+      <polygon points="165,-320 195,-215 140,-190" fill="#1e293b" />
+      <polygon points="-165,-320 -195,-215 -140,-190" fill="#0f172a" />
+
+      <!-- Inner Ears (Acoustic Concha) -->
+      <polygon points="140,-190 180,-110 95,-130" fill="#334155" />
+      <polygon points="-140,-190 -180,-110 -95,-130" fill="#1e293b" />
+
+      <!-- Forehead & Crown Armor Plates -->
+      <polygon points="0,-190 85,-205 95,-130 0,-110" fill="#334155" />
+      <polygon points="0,-190 -85,-205 -95,-130 0,-110" fill="#1e293b" />
+
+      <polygon points="0,-110 95,-130 75,-40 0,-30" fill="#475569" />
+      <polygon points="0,-110 -95,-130 -75,-40 0,-30" fill="#1e293b" />
+
+      <!-- Brow Temples -->
+      <polygon points="95,-130 180,-110 160,-35 75,-40" fill="#1e293b" />
+      <polygon points="-95,-130 -180,-110 -160,-35 -75,-40" fill="#0f172a" />
+
+      <!-- Upper Cheek Ruff -->
+      <polygon points="180,-110 255,-50 195,15 160,-35" fill="#334155" />
+      <polygon points="-180,-110 -255,-50 -195,15 -160,-35" fill="#1e293b" />
+
+      <!-- Mid Cheek Lateral Points -->
+      <polygon points="255,-50 285,45 210,85 195,15" fill="#1e293b" />
+      <polygon points="-255,-50 -285,45 -210,85 -195,15" fill="#0f172a" />
+
+      <!-- Lower Cheek Ruff Flare -->
+      <polygon points="285,45 225,140 165,115 210,85" fill="#334155" />
+      <polygon points="-285,45 -225,140 -165,115 -210,85" fill="#1e293b" />
+
+      <!-- ================= PREDATOR ALMOND EYES (SYSCALL SENSORS) ================= -->
+      <!-- Eye Sockets (Dark Recess) -->
+      <polygon points="25,-35 85,-45 95,-15 35,-5" fill="#020617" />
+      <polygon points="-25,-35 -85,-45 -95,-15 -35,-5" fill="#020617" />
+
+      <!-- Electric Cyan Glowing Eyes (Slanted Upward, Predator Cant) -->
+      <polygon points="32,-30 80,-38 88,-20 40,-12" fill="url(#cyan-optic)" />
+      <polygon points="-32,-30 -80,-38 -88,-20 -40,-12" fill="url(#cyan-optic)" />
+
+      <!-- Slit Pupils (Nanosecond Observation) -->
+      <polygon points="58,-34 64,-34 62,-16 56,-16" fill="#ffffff" />
+      <polygon points="-58,-34 -64,-34 -62,-16 -56,-16" fill="#ffffff" />
+
+      <!-- Bridge of Nose -->
+      <polygon points="0,-30 25,-35 30,45 0,55" fill="#64748b" />
+      <polygon points="0,-30 -25,-35 -30,45 0,55" fill="#475569" />
+
+      <!-- Titanium Slate Muzzle & Whisker Pads (Spread Horizontally) -->
+      <polygon points="30,45 95,25 105,95 25,110 0,55" fill="#475569" />
+      <polygon points="-30,45 -95,25 -105,95 -25,110 0,55" fill="#334155" />
+
+      <polygon points="25,110 105,95 165,115 115,160 0,165" fill="#334155" />
+      <polygon points="-25,110 -105,95 -165,115 -115,160 0,165" fill="#1e293b" />
+
+      <!-- Geometric Nose Tip & Sensor Core -->
+      <polygon points="0,55 22,50 0,78 -22,50" fill="#020617" />
+      <polygon points="0,68 12,54 0,76 -12,54" fill="#00f5ff" opacity="0.8" />
+
+      <!-- Chin & Jaw Guard -->
+      <polygon points="0,165 45,160 0,205 -45,160" fill="#1e293b" />
+      <polygon points="0,165 30,160 0,195 -30,160" fill="#0f172a" />
+
+      <!-- ================= OBSIDIAN CHEST ARMOR (WATERFALL RAILS) ================= -->
+      <!-- Center Sternum Chevron -->
+      <polygon points="0,215 55,245 0,335 -55,245" fill="#1e293b" stroke="#00f5ff" stroke-width="2" />
+      <polygon points="0,230 35,250 0,315 -35,250" fill="#0f172a" />
+
+      <!-- Chest Lateral Pectoral Plates -->
+      <polygon points="55,245 155,210 255,285 140,330 0,355 0,335" fill="#334155" />
+      <polygon points="-55,245 -155,210 -255,285 -140,330 0,355 0,335" fill="#0f172a" />
+
+      <!-- Subtle Waterfall IO Bus Circuit Lines (ProcTrace Metric Stream) -->
+      <line x1="-90" y1="265" x2="-190" y2="245" stroke="#00f5ff" stroke-width="3" stroke-dasharray="6, 6" opacity="0.7" />
+      <line x1="90" y1="265" x2="190" y2="245" stroke="#00f5ff" stroke-width="3" stroke-dasharray="6, 6" opacity="0.7" />
+      <circle cx="-190" cy="245" r="4" fill="#00f5ff" />
+      <circle cx="190" cy="245" r="4" fill="#00f5ff" />
+
+    </g>
+  </g>
+</svg>

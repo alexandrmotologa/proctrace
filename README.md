@@ -1,17 +1,24 @@
-<div align="center">
+<p align="center">
+  <img src="docs/images/logo.png?raw=true" alt="ProcTrace Logo" width="130" style="border-radius: 24px;" />
+</p>
 
-# ProcTrace
+<h1 align="center">ProcTrace</h1>
 
-**Cross-Platform Process Activity & Syscall Waterfall Monitor**
+<p align="center">
+  <strong>Cross-Platform Process Activity & Syscall Waterfall Monitor</strong>
+</p>
 
-A modern alternative to Sysinternals Process Monitor and strace. Delivers real-time observation of filesystem calls, socket connections, process trees, and permission errors with an interactive TUI and Chrome DevTools waterfall timeline.
+<p align="center">
+  A modern alternative to Sysinternals Process Monitor and strace. Delivers real-time observation of filesystem calls, socket connections, process trees, and permission errors with an interactive TUI and Chrome DevTools waterfall timeline.
+</p>
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Python: 3.10+](https://img.shields.io/badge/Python-3.10%2B-brightgreen.svg)](https://python.org)
-[![FastAPI](https://img.shields.io/badge/Web_Studio-FastAPI-009688.svg)](https://fastapi.tiangolo.com)
-[![Textual](https://img.shields.io/badge/TUI-Textual-0a84ff.svg)](https://textual.textualize.io)
+<p align="center">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT" /></a>
+  <a href="https://python.org"><img src="https://img.shields.io/badge/Python-3.10%2B-brightgreen.svg" alt="Python: 3.10+" /></a>
+  <a href="https://fastapi.tiangolo.com"><img src="https://img.shields.io/badge/Web_Studio-FastAPI-009688.svg" alt="FastAPI" /></a>
+  <a href="https://textual.textualize.io"><img src="https://img.shields.io/badge/TUI-Textual-0a84ff.svg" alt="Textual" /></a>
+</p>
 
-</div>
 
 ---
 
@@ -52,6 +59,12 @@ Clicking any waterfall bar opens the slide-over inspection drawer showing exact 
 Aggregates broken file lookups, permission denials, and connection failures into actionable diagnostics.
 
 ![ProcTrace Anomaly Triage](docs/images/proctrace_triage.png)
+
+### Error Isolation Mode
+Isolates non-zero return codes, broken file descriptors, and refused network sockets into a dedicated high-priority timeline:
+
+![ProcTrace Error Isolation](docs/images/proctrace_errors.png)
+
 
 ---
 

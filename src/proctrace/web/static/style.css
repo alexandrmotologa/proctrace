@@ -806,3 +806,114 @@ body {
   font-size: 11px;
 }
 
+/* ================= RESPONSIVE LAYOUT & ADAPTABILITY ================= */
+
+@media (max-width: 1200px) {
+  .kpi-strip {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 900px) {
+  .app-header {
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 10px 14px;
+  }
+
+  .header-actions {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .toolbar {
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 10px 14px;
+  }
+
+  .search-wrap {
+    flex: 1 1 100%;
+    max-width: 100%;
+  }
+
+  .category-pills {
+    overflow-x: auto;
+    white-space: nowrap;
+    padding-bottom: 4px;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+  }
+
+  .col-meta, .row-meta {
+    width: 320px;
+    min-width: 320px;
+  }
+}
+
+@media (max-width: 640px) {
+  .brand-text .subtitle {
+    display: none;
+  }
+
+  .kpi-strip {
+    grid-template-columns: repeat(2, 1fr);
+    padding: 10px 12px;
+    gap: 8px;
+  }
+
+  .kpi-value {
+    font-size: 15px;
+  }
+
+  .header-actions .btn {
+    padding: 5px 10px;
+    font-size: 11px;
+  }
+
+  .col-meta, .row-meta {
+    width: 220px;
+    min-width: 220px;
+    padding: 0 8px;
+    font-size: 11px;
+  }
+
+  .waterfall-header-row {
+    height: 24px;
+  }
+
+  .waterfall-row {
+    height: 26px;
+  }
+
+  .detail-drawer {
+    width: 100%;
+    min-width: 100%;
+    max-width: 100%;
+  }
+
+  .modal-container {
+    width: 96%;
+    max-width: 96%;
+    padding: 16px;
+    margin: 8px;
+    max-height: 90vh;
+  }
+
+  .modal-header h3 {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 420px) {
+  .kpi-strip {
+    grid-template-columns: 1fr;
+  }
+
+  .col-meta, .row-meta {
+    width: 170px;
+    min-width: 170px;
+  }
+}
+
+
