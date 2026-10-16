@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ProcTrace // Syscall Waterfall Studio</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div id="app">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="brand">
+        <div class="logo-mark">PT</div>
+        <div class="brand-text">
+          <h1>ProcTrace</h1>
+          <span class="subtitle">Syscall Waterfall Studio</span>
+        </div>
+      </div>
+
+      <div class="live-status">
+        <span class="status-beacon active" id="live-beacon"></span>
+        <span id="live-status-text">LIVE (20 FPS)</span>
+      </div>
+
+      <div class="header-actions">
+        <button class="btn btn-outline" id="btn-pause" title="Pause / Resume stream">Pause</button>
+        <button class="btn btn-outline" id="btn-clear" title="Clear recorded buffer">Clear</button>
+        <button class="btn btn-outline" id="btn-triage" title="View Anomaly Triage">Anomaly Triage</button>
+        <div class="dropdown">
+          <button class="btn btn-primary" id="btn-export">Export Trace ▾</button>
+          <div class="dropdown-menu" id="export-menu">
+            <a href="/api/export/json" download="proctrace.json">JSON Trace (.json)</a>
+            <a href="/api/export/csv" download="proctrace.csv">CSV Spreadsheet (.csv)</a>
+            <a href="/api/export/chrome" download="proctrace_perfetto.json">Chrome / Perfetto (.json)</a>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- KPI Metric Cards -->
+    <section class="kpi-strip">
+      <div class="kpi-card">
+        <span class="kpi-label">Total Events</span>
+        <span class="kpi-value" id="kpi-total">0</span>
+      </div>
+      <div class="kpi-card kpi-danger">
+        <span class="kpi-label">Syscall Errors</span>
+        <span class="kpi-value" id="kpi-errors">0</span>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-label">Throughput</span>
+        <span class="kpi-value" id="kpi-rate">0 <small>evt/s</small></span>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-label">Unique Paths</span>
+        <span class="kpi-value" id="kpi-paths">0</span>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-label">Tracked PIDs</span>
+        <span class="kpi-value" id="kpi-pids">0</span>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-label">Peak Latency</span>
+        <span class="kpi-value" id="kpi-latency">0 <small>µs</small></span>
+      </div>
+    </section>
+
+    <!-- Filter & Search Toolbar -->
+    <section class="toolbar">
+      <div class="search-wrap">
+        <input type="text" id="filter-search" placeholder="Search target path, syscall, or PID (e.g. .env, connect, 1234)...">
+      </div>
+
+      <div class="category-pills">
+        <button class="pill active" data-cat="ALL">All</button>
+        <button class="pill" data-cat="FILESYSTEM">Filesystem</button>
+        <button class="pill" data-cat="NETWORK">Network</button>
+        <button class="pill" data-cat="PROCESS">Process</button>
+        <button class="pill" data-cat="ENVIRONMENT">Environment</button>
+      </div>
+
+      <label class="toggle-control">
+        <input type="checkbox" id="filter-errors">
+        <span class="toggle-track"></span>
+        <span class="toggle-label">Errors Only</span>
+      </label>
+
+      <div class="view-mode-selector">
+        <select id="select-view-mode">
+          <option value="waterfall">Waterfall Timeline</option>
+          <option value="stream">Chronological Stream</option>
+        </select>
+      </div>
+    </section>
+
+    <!-- Waterfall Main Container -->
+    <main class="waterfall-container">
+      <div class="waterfall-header-row">
+        <div class="col-meta">Event & Target Path</div>
+        <div class="col-timeline" id="timeline-ruler">
+          <span class="ruler-tick" style="left: 0%">0ms</span>
+          <span class="ruler-tick" style="left: 25%">25%</span>
+          <span class="ruler-tick" style="left: 50%">50%</span>
+          <span class="ruler-tick" style="left: 75%">75%</span>
+          <span class="ruler-tick" style="left: 100%">100%</span>
+        </div>
+      </div>
+
+      <div class="waterfall-rows" id="waterfall-rows">
+        <div class="empty-state">
+          <div class="spinner"></div>
+          <p>Listening for kernel system events and process activity...</p>
+        </div>
+      </div>
+    </main>
+
+    <!-- Slide-over Event Detail Drawer -->
+    <div class="drawer-overlay" id="drawer-overlay"></div>
+    <aside class="event-drawer" id="event-drawer">
+      <div class="drawer-header">
+        <h3>Syscall Inspection</h3>
+        <button class="drawer-close" id="drawer-close">&times;</button>
+      </div>
+      <div class="drawer-body" id="drawer-body">
+        <!-- Injected via JavaScript -->
+      </div>
+    </aside>
+
+    <!-- Anomaly Triage Modal -->
+    <div class="modal-overlay" id="triage-modal-overlay">
+      <div class="modal triage-modal">
+        <div class="modal-header">
+          <h2>Root Cause Anomaly Triage</h2>
+          <button class="modal-close" id="triage-close">&times;</button>
+        </div>
+        <div class="modal-body" id="triage-modal-body">
+          <p>Loading anomalies...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

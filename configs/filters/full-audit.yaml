@@ -1,0 +1,12 @@
+# Filter preset capturing all system call operations
+name: full-audit
+description: Captures all operations across filesystem, network, process, and environment
+errors_only: false
+categories:
+  - FILESYSTEM
+  - NETWORK
+  - PROCESS
+  - ENVIRONMENT
+operations: []
+exclude_system: false
+min_duration_us: 0

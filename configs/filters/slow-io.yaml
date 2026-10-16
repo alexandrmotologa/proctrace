@@ -1,0 +1,10 @@
+# Filter preset for isolating high-latency system calls
+name: slow-io
+description: Captures filesystem and network calls exceeding 10,000 microseconds (10ms)
+errors_only: false
+categories:
+  - FILESYSTEM
+  - NETWORK
+operations: []
+exclude_system: true
+min_duration_us: 10000.0

@@ -1,0 +1,11 @@
+# Filter preset for isolating missing files and broken paths
+name: missing-files
+description: Highlights failed filesystem lookups such as ENOENT and file not found
+errors_only: true
+categories:
+  - FILESYSTEM
+operations:
+  - OPEN
+  - STAT
+exclude_system: true
+min_duration_us: 0

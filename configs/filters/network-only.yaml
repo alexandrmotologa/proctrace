@@ -1,0 +1,13 @@
+# Filter preset for isolating network activity
+name: network-only
+description: Captures socket connections, bindings, listens, and DNS lookups
+errors_only: false
+categories:
+  - NETWORK
+operations:
+  - CONNECT
+  - ACCEPT
+  - LISTEN
+  - DNS_LOOKUP
+exclude_system: false
+min_duration_us: 0
