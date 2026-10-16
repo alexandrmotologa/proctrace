@@ -11,12 +11,15 @@ from fastapi import FastAPI, Query, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse, HTMLResponse, Response
 from fastapi.staticfiles import StaticFiles
 
+from proctrace.analysis.explainer import RootCauseExplainer
+from proctrace.core.diff import TraceDiffer
 from proctrace.core.filter import AnomalyCorrelator, EventFilter
 from proctrace.core.models import EventCategory, SyscallEvent, TraceSession
 from proctrace.core.ring_buffer import RingBuffer
 from proctrace.export.chrome_trace import export_to_chrome_trace
 from proctrace.export.csv_export import export_to_csv
 from proctrace.export.json_export import export_to_json
+from proctrace.security.auditor import SecurityAuditor
 
 STATIC_DIR = Path(__file__).parent / "static"
 
@@ -104,6 +107,63 @@ def create_app(
         correlator = AnomalyCorrelator()
         report = correlator.correlate(events)
         return report.to_dict()
+
+    @app.get("/api/explanations")
+    async def get_explanations() -> List[Dict[str, Any]]:
+        """Compute root-cause explanations and suggested remediations."""
+        events = ring_buffer.get_all()
+        explainer = RootCauseExplainer()
+        findings = explainer.explain(events)
+        return [f.to_dict() for f in findings]
+
+    @app.get("/api/security")
+    async def get_security_audit() -> Dict[str, Any]:
+        """Audit trace for credential access and potential exfiltration."""
+        events = ring_buffer.get_all()
+        auditor = SecurityAuditor()
+        audit_rep = auditor.audit(events)
+        return audit_rep.to_dict()
+
+    @app.get("/api/tree")
+    async def get_process_tree() -> List[Dict[str, Any]]:
+        """Construct hierarchical process call tree."""
+        events = ring_buffer.get_all()
+        pids: Dict[int, Dict[str, Any]] = {}
+        for ev in events:
+            if ev.pid not in pids:
+                pids[ev.pid] = {
+                    "pid": ev.pid,
+                    "ppid": ev.ppid,
+                    "name": ev.process_name,
+                    "event_count": 0,
+                    "error_count": 0,
+                    "first_seen": ev.timestamp,
+                    "last_seen": ev.timestamp,
+                    "children": [],
+                }
+            pids[ev.pid]["event_count"] += 1
+            if ev.is_error:
+                pids[ev.pid]["error_count"] += 1
+            pids[ev.pid]["last_seen"] = max(pids[ev.pid]["last_seen"], ev.timestamp)
+
+        roots = []
+        for pid_val, info in pids.items():
+            parent_pid = info["ppid"]
+            if parent_pid and parent_pid in pids and parent_pid != pid_val:
+                pids[parent_pid]["children"].append(info)
+            else:
+                roots.append(info)
+        return roots
+
+    @app.post("/api/diff")
+    async def compute_trace_diff(payload: Dict[str, Any]) -> Dict[str, Any]:
+        """Compare uploaded candidate trace events against current ring buffer."""
+        curr_events = ring_buffer.get_all()
+        base_events_raw = payload.get("events", [])
+        base_events = [SyscallEvent.from_dict(e) for e in base_events_raw]
+        differ = TraceDiffer()
+        diff_report = differ.compare(base_events, curr_events)
+        return diff_report.to_dict()
 
     @app.post("/api/clear")
     async def clear_buffer() -> Dict[str, str]:

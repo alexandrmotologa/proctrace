@@ -64,4 +64,21 @@ Pre-allocates memory for up to 500,000 events. When the buffer reaches capacity,
 
 ### 4. Interactive Surfaces
 - Textual TUI (`proctrace.tui.app`): Terminal dashboard with live scrolling events, ASCII waterfall timeline, fuzzy search, and modal inspection.
-- Web Studio (`proctrace.web.server`): FastAPI server streaming events over WebSockets at 20 frames per second to an HTML5 waterfall interface with swimlanes and detail drawers.
+- Web Studio (`proctrace.web.server`): FastAPI server streaming events over WebSockets at 20 frames per second to an HTML5 waterfall interface with process swimlanes, process hierarchy trees, and diagnostic modals.
+
+### 5. Regression Diff Engine (`proctrace.core.diff`)
+- `TraceDiffer`: Compares two recorded runs (baseline vs current) to surface latency regressions (>50% slowdown), newly missing files (`ENOENT`), new or removed network endpoints, and error rate changes.
+- Outputs Markdown summary tables and machine-readable JSON diffs for automated regression testing.
+
+### 6. Root Cause Explainer (`proctrace.analysis.explainer`)
+- `RootCauseExplainer`: Maps raw syscall failure patterns to human-actionable root causes and exact terminal remediation commands.
+- Automatically handles:
+  - Missing `.env` configurations (detects existing `.env.example` templates and suggests `cp .env.example .env`).
+  - Missing shared libraries (`vcruntime140.dll`, `libssl`, `libcrypto`) with precise package manager installation commands (`apt`, `brew`, `vcredist`).
+  - Connection refused errors on well-known ports (PostgreSQL 5432, MySQL 3306, Redis 6379, MongoDB 27017) with service start commands.
+  - Permission denied (`EACCES`) paths with explicit `chmod` or ownership guidance.
+
+### 7. Security Auditor and Policy Guard (`proctrace.security.auditor`)
+- `SecurityAuditor`: Scans syscall traces for sensitive file access (SSH keys, AWS credentials, Docker config, kubeconfig, `/etc/shadow`, Windows SAM). Detects data exfiltration patterns when sensitive file reads are followed by outbound external network connections within 5 seconds.
+- `PolicyGuard`: Enforces CI/CD operational constraints (`--no-missing-configs`, `--no-unencrypted-http`, `--max-latency-ms`, `--max-errors`). Causes `proctrace assert` to exit with status code 1 when rules fail.
+

@@ -30,6 +30,8 @@
         <button class="btn btn-outline" id="btn-pause" title="Pause / Resume stream">Pause</button>
         <button class="btn btn-outline" id="btn-clear" title="Clear recorded buffer">Clear</button>
         <button class="btn btn-outline" id="btn-triage" title="View Anomaly Triage">Anomaly Triage</button>
+        <button class="btn btn-outline" id="btn-security" title="Security & Exfiltration Audit">Security Audit</button>
+        <button class="btn btn-outline" id="btn-tree" title="View Process Hierarchy Tree">Process Tree</button>
         <div class="dropdown">
           <button class="btn btn-primary" id="btn-export">Export Trace ▾</button>
           <div class="dropdown-menu" id="export-menu">
@@ -92,6 +94,7 @@
       <div class="view-mode-selector">
         <select id="select-view-mode">
           <option value="waterfall">Waterfall Timeline</option>
+          <option value="swimlanes">Process Swimlanes</option>
           <option value="stream">Chronological Stream</option>
         </select>
       </div>
@@ -134,11 +137,37 @@
     <div class="modal-overlay" id="triage-modal-overlay">
       <div class="modal triage-modal">
         <div class="modal-header">
-          <h2>Root Cause Anomaly Triage</h2>
+          <h2>Root Cause Anomaly & Remediation Triage</h2>
           <button class="modal-close" id="triage-close">&times;</button>
         </div>
         <div class="modal-body" id="triage-modal-body">
           <p>Loading anomalies...</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Security & Exfiltration Audit Modal -->
+    <div class="modal-overlay" id="security-modal-overlay">
+      <div class="modal security-modal">
+        <div class="modal-header">
+          <h2>Security & Sandbox Risk Audit</h2>
+          <button class="modal-close" id="security-close">&times;</button>
+        </div>
+        <div class="modal-body" id="security-modal-body">
+          <p>Loading security audit...</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Process Call Tree Modal -->
+    <div class="modal-overlay" id="tree-modal-overlay">
+      <div class="modal tree-modal">
+        <div class="modal-header">
+          <h2>Process Hierarchy & Execution Tree</h2>
+          <button class="modal-close" id="tree-close">&times;</button>
+        </div>
+        <div class="modal-body" id="tree-modal-body">
+          <p>Loading process tree...</p>
         </div>
       </div>
     </div>

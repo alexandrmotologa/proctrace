@@ -115,3 +115,85 @@ Inspects system capabilities, permissions, kernel collector availability, and be
 ```bash
 proctrace doctor
 ```
+
+---
+
+### `proctrace diff`
+Compares two recorded trace files to identify functional and performance regressions.
+
+```bash
+proctrace diff [OPTIONS] BASELINE_TRACE CURRENT_TRACE
+```
+
+#### Options
+- `--output`, `-o PATH`: Save the comparison as a Markdown report.
+- `--json`: Output diff results as structured JSON.
+
+#### Examples
+```bash
+# Compare local baseline run against CI trace
+proctrace diff baseline.json current.json
+
+# Save comparison report
+proctrace diff baseline.json current.json --output regression_report.md
+```
+
+---
+
+### `proctrace explain`
+Analyzes intercepted failures in a trace and provides root-cause explanations with actionable remediation steps.
+
+```bash
+proctrace explain [OPTIONS] TRACE_FILE
+```
+
+#### Options
+- `--json`: Output explanations as structured JSON.
+
+#### Examples
+```bash
+proctrace explain trace.json
+```
+
+---
+
+### `proctrace audit`
+Scans trace events for sensitive credential file access, token reads, and potential data exfiltration chains.
+
+```bash
+proctrace audit [OPTIONS] TRACE_FILE
+```
+
+#### Options
+- `--json`: Output security audit results as structured JSON.
+
+#### Examples
+```bash
+proctrace audit trace.json
+```
+
+---
+
+### `proctrace assert`
+Executes a target command in CI/CD mode and verifies operational, performance, and security policies. Exits with non-zero status if any policy is violated.
+
+```bash
+proctrace assert [OPTIONS] -- COMMAND [ARGS]...
+```
+
+#### Options
+- `--no-missing-configs`: Fail if any configuration file lookups return ENOENT.
+- `--no-unencrypted-http`: Fail if unencrypted outbound HTTP connections (port 80) occur.
+- `--max-latency-ms FLOAT`: Fail if any system call exceeds the specified latency threshold in milliseconds.
+- `--max-errors INTEGER`: Maximum allowable error budget (default: 0).
+- `--output-json PATH`: Export trace to JSON on exit.
+
+#### Examples
+```bash
+# Assert that tests run without missing configuration files or slow I/O
+proctrace assert --no-missing-configs --max-latency-ms 50 -- pytest
+
+# Enforce secure network policy in deployment scripts
+proctrace assert --no-unencrypted-http -- npm run build
+```
+

@@ -1,6 +1,7 @@
 /**
  * ProcTrace Web Studio // Frontend Application
- * Real-time WebSocket streaming, DevTools waterfall rendering, and anomaly triage.
+ * Real-time WebSocket streaming, DevTools waterfall rendering, anomaly triage,
+ * process hierarchy tree, and security risk auditing.
  */
 
 (function () {
@@ -24,6 +25,8 @@
   const elBtnPause = document.getElementById('btn-pause');
   const elBtnClear = document.getElementById('btn-clear');
   const elBtnTriage = document.getElementById('btn-triage');
+  const elBtnSecurity = document.getElementById('btn-security');
+  const elBtnTree = document.getElementById('btn-tree');
   const elFilterSearch = document.getElementById('filter-search');
   const elFilterErrors = document.getElementById('filter-errors');
   const elSelectViewMode = document.getElementById('select-view-mode');
@@ -42,9 +45,18 @@
   const elDrawerOverlay = document.getElementById('drawer-overlay');
   const elDrawerClose = document.getElementById('drawer-close');
   const elDrawerBody = document.getElementById('drawer-body');
+  
   const elTriageModal = document.getElementById('triage-modal-overlay');
   const elTriageClose = document.getElementById('triage-close');
   const elTriageBody = document.getElementById('triage-modal-body');
+
+  const elSecurityModal = document.getElementById('security-modal-overlay');
+  const elSecurityClose = document.getElementById('security-close');
+  const elSecurityBody = document.getElementById('security-modal-body');
+
+  const elTreeModal = document.getElementById('tree-modal-overlay');
+  const elTreeClose = document.getElementById('tree-close');
+  const elTreeBody = document.getElementById('tree-modal-body');
 
   // Initialize
   function init() {
@@ -56,11 +68,31 @@
   function setupEventListeners() {
     elBtnPause.addEventListener('click', togglePause);
     elBtnClear.addEventListener('click', clearBuffer);
+    
+    // Triage modal
     elBtnTriage.addEventListener('click', openTriageModal);
     elTriageClose.addEventListener('click', closeTriageModal);
     elTriageModal.addEventListener('click', (e) => {
       if (e.target === elTriageModal) closeTriageModal();
     });
+
+    // Security modal
+    if (elBtnSecurity) {
+      elBtnSecurity.addEventListener('click', openSecurityModal);
+      elSecurityClose.addEventListener('click', closeSecurityModal);
+      elSecurityModal.addEventListener('click', (e) => {
+        if (e.target === elSecurityModal) closeSecurityModal();
+      });
+    }
+
+    // Process Tree modal
+    if (elBtnTree) {
+      elBtnTree.addEventListener('click', openTreeModal);
+      elTreeClose.addEventListener('click', closeTreeModal);
+      elTreeModal.addEventListener('click', (e) => {
+        if (e.target === elTreeModal) closeTreeModal();
+      });
+    }
 
     elDrawerClose.addEventListener('click', closeDrawer);
     elDrawerOverlay.addEventListener('click', closeDrawer);
@@ -94,6 +126,8 @@
       if (e.key === 'Escape') {
         closeDrawer();
         closeTriageModal();
+        closeSecurityModal();
+        closeTreeModal();
       } else if (e.key === ' ' && e.target.tagName !== 'INPUT') {
         e.preventDefault();
         togglePause();
@@ -164,9 +198,8 @@
       events.push(ev);
     }
 
-    // Keep memory bounded to latest 2000 events in browser
-    if (events.length > 2000) {
-      events = events.slice(events.length - 2000);
+    if (events.length > 2500) {
+      events = events.slice(events.length - 2500);
     }
 
     updateTimelineBounds();
@@ -216,6 +249,43 @@
       .catch((err) => console.error(err));
   }
 
+  function renderRowHtml(ev, spanSeconds) {
+    const isErr = ev.is_error;
+    const rowClass = isErr ? 'waterfall-row error-row' : 'waterfall-row';
+    const badgeClass = getBadgeClass(ev.category, isErr);
+    const barColorClass = isErr ? 'bar-err' : getBarColorClass(ev.category);
+
+    let leftPct = 0;
+    let widthPct = 2;
+
+    if (viewMode !== 'stream' && baseTimestamp && maxTimestamp) {
+      const offset = Math.max(0, ev.timestamp - baseTimestamp);
+      leftPct = Math.min(95, (offset / spanSeconds) * 100);
+      const durSec = (ev.duration_us || 0) / 1_000_000;
+      widthPct = Math.max(0.8, Math.min(100 - leftPct, (durSec / spanSeconds) * 100));
+    }
+
+    const formattedDur = formatDuration(ev.duration_us);
+    const targetDisplay = escapeHtml(ev.target_path || ev.operation);
+
+    return `
+      <div class="${rowClass}" data-id="${ev.id}">
+        <div class="row-meta">
+          <span class="op-badge ${badgeClass}">${ev.operation}</span>
+          <span style="color: #8b949e; width: 45px;">${ev.pid}</span>
+          <span class="target-text ${isErr ? 'error-text' : ''}" title="${targetDisplay}">
+            ${targetDisplay}
+          </span>
+        </div>
+        <div class="row-timeline">
+          <div class="waterfall-bar ${barColorClass}" style="left: ${leftPct.toFixed(2)}%; width: ${widthPct.toFixed(2)}%;">
+            <span class="bar-duration-label">${formattedDur}</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
   function renderWaterfall() {
     const filtered = events.filter((ev) => {
       if (errorsOnly && !ev.is_error) return false;
@@ -241,51 +311,32 @@
       return;
     }
 
-    // Limit DOM rendering to latest 200 events for smooth 60fps scrolling
     const windowSlice = filtered.slice(-200);
     const spanSeconds = Math.max(0.001, (maxTimestamp || 0) - (baseTimestamp || 0));
 
     let html = '';
-    for (const ev of windowSlice) {
-      const isErr = ev.is_error;
-      const rowClass = isErr ? 'waterfall-row error-row' : 'waterfall-row';
-      const badgeClass = getBadgeClass(ev.category, isErr);
-      const barColorClass = isErr ? 'bar-err' : getBarColorClass(ev.category);
-
-      let leftPct = 0;
-      let widthPct = 2;
-
-      if (viewMode === 'waterfall' && baseTimestamp && maxTimestamp) {
-        const offset = Math.max(0, ev.timestamp - baseTimestamp);
-        leftPct = Math.min(95, (offset / spanSeconds) * 100);
-        const durSec = (ev.duration_us || 0) / 1_000_000;
-        widthPct = Math.max(0.8, Math.min(100 - leftPct, (durSec / spanSeconds) * 100));
+    if (viewMode === 'swimlanes') {
+      const groups = {};
+      for (const ev of windowSlice) {
+        if (!groups[ev.pid]) {
+          groups[ev.pid] = { name: ev.process_name, events: [] };
+        }
+        groups[ev.pid].events.push(ev);
       }
-
-      const formattedDur = formatDuration(ev.duration_us);
-      const targetDisplay = escapeHtml(ev.target_path || ev.operation);
-
-      html += `
-        <div class="${rowClass}" data-id="${ev.id}">
-          <div class="row-meta">
-            <span class="op-badge ${badgeClass}">${ev.operation}</span>
-            <span style="color: #8b949e; width: 45px;">${ev.pid}</span>
-            <span class="target-text ${isErr ? 'error-text' : ''}" title="${targetDisplay}">
-              ${targetDisplay}
-            </span>
-          </div>
-          <div class="row-timeline">
-            <div class="waterfall-bar ${barColorClass}" style="left: ${leftPct.toFixed(2)}%; width: ${widthPct.toFixed(2)}%;">
-              <span class="bar-duration-label">${formattedDur}</span>
-            </div>
-          </div>
-        </div>
-      `;
+      for (const [pid, grp] of Object.entries(groups)) {
+        html += `<div class="swimlane-header">Process: <strong>${escapeHtml(grp.name)}</strong> (PID: ${pid}) &mdash; ${grp.events.length} syscalls</div>`;
+        for (const ev of grp.events) {
+          html += renderRowHtml(ev, spanSeconds);
+        }
+      }
+    } else {
+      for (const ev of windowSlice) {
+        html += renderRowHtml(ev, spanSeconds);
+      }
     }
 
     elRows.innerHTML = html;
 
-    // Attach row click listeners for detail inspection
     elRows.querySelectorAll('.waterfall-row').forEach((row) => {
       row.addEventListener('click', () => {
         const id = row.dataset.id;
@@ -374,14 +425,38 @@
 
   function openTriageModal() {
     elTriageModal.classList.add('open');
-    elTriageBody.innerHTML = '<p>Computing anomaly correlation...</p>';
+    elTriageBody.innerHTML = '<p>Computing root-cause diagnosis and anomaly correlation...</p>';
 
-    fetch('/api/anomalies')
-      .then((r) => r.json())
-      .then((rep) => {
+    Promise.all([
+      fetch('/api/anomalies').then((r) => r.json()),
+      fetch('/api/explanations').then((r) => r.json()).catch(() => [])
+    ])
+      .then(([rep, explanations]) => {
         let html = '';
 
-        // Missing Files
+        // 1. Actionable Remediation Guidance
+        if (explanations && explanations.length > 0) {
+          html += `<div class="triage-section">
+            <h4 style="color:#3fb950;">Actionable Remediation Guidance (${explanations.length})</h4>
+            <div class="remediation-cards">`;
+          for (const ex of explanations) {
+            html += `
+              <div class="remediation-card">
+                <div class="rem-title">${escapeHtml(ex.title)}</div>
+                <div class="rem-cause">${escapeHtml(ex.root_cause)}</div>
+                <div class="rem-steps">
+                  <strong>Recommended Steps:</strong>
+                  <ul>
+                    ${ex.remediation_steps.map((s) => `<li><code>${escapeHtml(s)}</code></li>`).join('')}
+                  </ul>
+                </div>
+              </div>
+            `;
+          }
+          html += '</div></div>';
+        }
+
+        // 2. Missing Files
         html += `<div class="triage-section">
           <h4>Missing Files / Broken Paths (${rep.missing_files.length})</h4>`;
         if (rep.missing_files.length) {
@@ -398,7 +473,7 @@
         }
         html += '</div>';
 
-        // Access Denied
+        // 3. Access Denied
         html += `<div class="triage-section">
           <h4>Permission Denials (${rep.access_denied.length})</h4>`;
         if (rep.access_denied.length) {
@@ -415,7 +490,7 @@
         }
         html += '</div>';
 
-        // Failed Connections
+        // 4. Failed Connections
         html += `<div class="triage-section">
           <h4>Failed Socket Connections (${rep.failed_connections.length})</h4>`;
         if (rep.failed_connections.length) {
@@ -441,6 +516,103 @@
 
   function closeTriageModal() {
     elTriageModal.classList.remove('open');
+  }
+
+  function openSecurityModal() {
+    if (!elSecurityModal) return;
+    elSecurityModal.classList.add('open');
+    elSecurityBody.innerHTML = '<p>Auditing trace for sensitive credential access and exfiltration...</p>';
+
+    fetch('/api/security')
+      .then((r) => r.json())
+      .then((rep) => {
+        const sevColor = rep.risk_level === 'CLEAN' ? '#3fb950' : (rep.risk_level === 'LOW' || rep.risk_level === 'MEDIUM' ? '#d29922' : '#f85149');
+        let html = `
+          <div class="security-banner" style="border-left: 4px solid ${sevColor}; padding: 12px; background: rgba(22, 27, 34, 0.8); margin-bottom: 20px;">
+            <div style="font-size: 16px; font-weight: 700; color: ${sevColor};">Risk Assessment: ${rep.risk_level} (${rep.risk_score} / 100)</div>
+            <div style="color: #8b949e; margin-top: 4px;">Detected ${rep.total_findings} security finding(s) and ${rep.exfiltration_suspects.length} potential exfiltration chain(s).</div>
+          </div>
+        `;
+
+        if (rep.exfiltration_suspects.length > 0) {
+          html += `<div class="triage-section">
+            <h4 style="color:#f85149;">Data Exfiltration Suspects (${rep.exfiltration_suspects.length})</h4>
+            <ul class="triage-list">`;
+          for (const s of rep.exfiltration_suspects) {
+            html += `<li>
+              <span><strong>PID ${s.pid}</strong> (${escapeHtml(s.process_name)}) read <code>${escapeHtml(s.sensitive_file)}</code> &rarr; connected to <code>${escapeHtml(s.remote_endpoint)}</code></span>
+              <span class="triage-badge" style="background:#b62324; color:#fff;">+${s.time_delta_seconds}s</span>
+            </li>`;
+          }
+          html += `</ul></div>`;
+        }
+
+        if (rep.findings.length > 0) {
+          html += `<div class="triage-section">
+            <h4>Sensitive Credential Access (${rep.findings.length})</h4>
+            <ul class="triage-list">`;
+          for (const f of rep.findings) {
+            html += `<li>
+              <span>[${f.severity}] <strong>${escapeHtml(f.title)}</strong>: <code>${escapeHtml(f.target)}</code></span>
+              <span class="triage-badge">${f.severity}</span>
+            </li>`;
+          }
+          html += `</ul></div>`;
+        } else {
+          html += `<p style="color: #3fb950;">No credential access or unauthorized paths detected in trace.</p>`;
+        }
+
+        elSecurityBody.innerHTML = html;
+      })
+      .catch((err) => {
+        elSecurityBody.innerHTML = `<p style="color:#f85149;">Error loading security audit: ${err.message}</p>`;
+      });
+  }
+
+  function closeSecurityModal() {
+    if (elSecurityModal) elSecurityModal.classList.remove('open');
+  }
+
+  function openTreeModal() {
+    if (!elTreeModal) return;
+    elTreeModal.classList.add('open');
+    elTreeBody.innerHTML = '<p>Reconstructing process hierarchy tree...</p>';
+
+    fetch('/api/tree')
+      .then((r) => r.json())
+      .then((tree) => {
+        if (!tree.length) {
+          elTreeBody.innerHTML = '<p style="color: #8b949e;">No process hierarchy recorded.</p>';
+          return;
+        }
+
+        function renderNode(node) {
+          let cHtml = '';
+          if (node.children && node.children.length) {
+            cHtml = `<ul class="tree-children">${node.children.map(renderNode).join('')}</ul>`;
+          }
+          return `
+            <li class="tree-node">
+              <div class="tree-item">
+                <span class="tree-name">${escapeHtml(node.name)}</span>
+                <span class="tree-badge">PID ${node.pid}</span>
+                <span class="tree-events">${node.event_count} events</span>
+                ${node.error_count > 0 ? `<span class="triage-badge">${node.error_count} errors</span>` : ''}
+              </div>
+              ${cHtml}
+            </li>
+          `;
+        }
+
+        elTreeBody.innerHTML = `<ul class="tree-root">${tree.map(renderNode).join('')}</ul>`;
+      })
+      .catch((err) => {
+        elTreeBody.innerHTML = `<p style="color:#f85149;">Error loading process tree: ${err.message}</p>`;
+      });
+  }
+
+  function closeTreeModal() {
+    if (elTreeModal) elTreeModal.classList.remove('open');
   }
 
   function escapeHtml(str) {

@@ -172,6 +172,47 @@ proctrace export trace.json --format chrome --output trace_perfetto.json
 proctrace export trace.json --format report --output incident_report.md
 ```
 
+### 5. Regression Diffing
+Compare two recorded trace runs to detect latency regressions, newly broken file lookups, or unexpected endpoint changes:
+```bash
+# Compare baseline run against current run
+proctrace diff baseline.json current.json
+
+# Save comparison as Markdown report
+proctrace diff baseline.json current.json --output diff_report.md
+```
+
+### 6. Root-Cause Explanation & Remediation
+Automatically translate failed syscalls into clear root-cause explanations and concrete shell commands:
+```bash
+proctrace explain trace.json
+```
+Diagnoses:
+- Missing `.env` files (detects `.env.example` templates and suggests copy commands).
+- Uninstalled dynamic libraries (`libssl`, `vcruntime140.dll`) with platform package manager commands.
+- Stopped services on standard database and cache ports (PostgreSQL 5432, MySQL 3306, Redis 6379, MongoDB 27017).
+- Permission denied (`EACCES`) paths with file ownership and `chmod` recommendations.
+
+### 7. Security & Credential Audit
+Detect credential exposure and data exfiltration patterns:
+```bash
+proctrace audit trace.json
+```
+Audits:
+- Access to sensitive credentials (`~/.ssh/id_rsa`, AWS tokens, Docker configs, kubeconfig, shadow/SAM files).
+- Exfiltration chains: flags outbound network connections opened within 5 seconds of reading sensitive credential files.
+
+### 8. CI/CD Operational Assertions
+Enforce performance and operational policies in continuous integration pipelines. Exits with status code 1 on violation:
+```bash
+# Fail build if any config lookup fails or if any syscall takes longer than 50ms
+proctrace assert --no-missing-configs --max-latency-ms 50 -- pytest
+
+# Block unencrypted HTTP network calls in production builds
+proctrace assert --no-unencrypted-http -- npm run build
+```
+
+
 ---
 
 ## Filter Presets

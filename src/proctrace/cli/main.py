@@ -27,6 +27,9 @@ from proctrace.export.chrome_trace import export_to_chrome_trace
 from proctrace.export.csv_export import export_to_csv
 from proctrace.export.json_export import export_to_json
 from proctrace.export.markdown_report import export_to_markdown_report
+from proctrace.analysis.explainer import RootCauseExplainer
+from proctrace.core.diff import TraceDiffer
+from proctrace.security.auditor import PolicyGuard, SecurityAuditor
 from proctrace.tui.app import ProcTraceTUI
 from proctrace.web.server import create_app
 
@@ -290,3 +293,192 @@ def doctor_command() -> None:
 
     console.print(table)
     console.print("\n[bold green]Ready to trace process activity![/bold green]")
+
+
+@app.command(name="diff")
+def diff_command(
+    baseline_trace: Path = typer.Argument(..., help="Baseline trace JSON file."),
+    current_trace: Path = typer.Argument(..., help="Candidate/current trace JSON file."),
+    output: Optional[Path] = typer.Option(None, "--output", "-o", help="Save markdown diff report to file."),
+    json_output: bool = typer.Option(False, "--json", help="Output diff as JSON."),
+) -> None:
+    """Compare two traces to identify regressions, new errors, and latency shifts."""
+    if not baseline_trace.exists():
+        console.print(f"[red]Error:[/] Baseline trace '{baseline_trace}' not found.")
+        raise typer.Exit(1)
+    if not current_trace.exists():
+        console.print(f"[red]Error:[/] Candidate trace '{current_trace}' not found.")
+        raise typer.Exit(1)
+
+    with open(baseline_trace, "r", encoding="utf-8") as f:
+        base_data = json.load(f)
+    with open(current_trace, "r", encoding="utf-8") as f:
+        curr_data = json.load(f)
+
+    base_events = [SyscallEvent.from_dict(e) for e in base_data.get("events", [])]
+    curr_events = [SyscallEvent.from_dict(e) for e in curr_data.get("events", [])]
+
+    differ = TraceDiffer()
+    report = differ.compare(base_events, curr_events)
+
+    if json_output:
+        console.print_json(json.dumps(report.to_dict()))
+    else:
+        # Render colored rich table summary
+        table = Table(title="Trace Comparison Summary")
+        table.add_column("Metric", style="cyan")
+        table.add_column("Baseline", style="white")
+        table.add_column("Candidate", style="white")
+        table.add_column("Delta", style="yellow")
+
+        table.add_row("Total Events", str(report.baseline_count), str(report.current_count), f"{report.count_delta:+d}")
+        table.add_row("Total Errors", str(report.baseline_errors), str(report.current_errors), f"{report.error_delta:+d}")
+        table.add_row("New Missing Files (ENOENT)", "0", str(len(report.new_missing_files)), f"+{len(report.new_missing_files)}")
+        table.add_row("New Network Endpoints", "0", str(len(report.new_network_endpoints)), f"+{len(report.new_network_endpoints)}")
+        table.add_row("Latency Regressions (>50%)", "0", str(len(report.latency_regressions)), f"+{len(report.latency_regressions)}")
+        console.print(table)
+
+        if report.new_missing_files:
+            console.print("\n[bold red]New Missing Files (ENOENT):[/bold red]")
+            for p in report.new_missing_files:
+                console.print(f"  [red][X][/red] {p}")
+
+        if report.latency_regressions:
+            console.print("\n[bold yellow]Latency Regressions:[/bold yellow]")
+            for r in report.latency_regressions[:10]:
+                console.print(f"  [yellow]![/yellow] {r.operation} {r.target_path}: {r.baseline_us:.1f}µs -> {r.current_us:.1f}µs (+{r.increase_pct:.1f}%)")
+
+    if output:
+        md = report.to_markdown()
+        output.write_text(md, encoding="utf-8")
+        console.print(f"\n[green]Diff report saved to:[/] {output}")
+
+
+@app.command(name="explain")
+def explain_command(
+    trace_file: Path = typer.Argument(..., help="Trace JSON file to analyze."),
+    json_output: bool = typer.Option(False, "--json", help="Output explanations as JSON."),
+) -> None:
+    """Analyze intercepted failures and produce root-cause explanations with remediation steps."""
+    if not trace_file.exists():
+        console.print(f"[red]Error:[/] Trace file '{trace_file}' not found.")
+        raise typer.Exit(1)
+
+    with open(trace_file, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    events = [SyscallEvent.from_dict(e) for e in data.get("events", [])]
+
+    explainer = RootCauseExplainer()
+    explanations = explainer.explain(events)
+
+    if json_output:
+        console.print_json(json.dumps([ex.to_dict() for ex in explanations]))
+        return
+
+    if not explanations:
+        console.print("[bold green][OK] No actionable failure patterns detected in trace.[/bold green]")
+        return
+
+    console.print(f"[bold cyan]Identified {len(explanations)} root-cause diagnostic finding(s):[/bold cyan]\n")
+    for idx, ex in enumerate(explanations, 1):
+        sev_color = "red" if ex.severity == "CRITICAL" else "yellow"
+        console.print(Panel(
+            f"[bold {sev_color}]Rule:[/] {ex.rule_name}\n"
+            f"[bold {sev_color}]Root Cause:[/] {ex.root_cause}\n\n"
+            f"[bold green]Suggested Remediation:[/bold green]\n"
+            + "\n".join(f"  * {step}" for step in ex.remediation_steps),
+            title=f"Finding #{idx}: [{sev_color}]{ex.title}[/{sev_color}]",
+            border_style=sev_color,
+        ))
+
+
+@app.command(name="audit")
+def audit_command(
+    trace_file: Path = typer.Argument(..., help="Trace JSON file to audit."),
+    json_output: bool = typer.Option(False, "--json", help="Output security audit as JSON."),
+) -> None:
+    """Audit trace for credential file access, sensitive token reads, and data exfiltration."""
+    if not trace_file.exists():
+        console.print(f"[red]Error:[/] Trace file '{trace_file}' not found.")
+        raise typer.Exit(1)
+
+    with open(trace_file, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    events = [SyscallEvent.from_dict(e) for e in data.get("events", [])]
+
+    auditor = SecurityAuditor()
+    rep = auditor.audit(events)
+
+    if json_output:
+        console.print_json(json.dumps(rep.to_dict()))
+        return
+
+    sev_color = "green" if rep.risk_level == "CLEAN" else ("yellow" if rep.risk_level in ("LOW", "MEDIUM") else "red")
+    console.print(Panel(
+        f"Risk Level: [bold {sev_color}]{rep.risk_level}[/bold {sev_color}]\n"
+        f"Risk Score: [bold {sev_color}]{rep.risk_score} / 100[/bold {sev_color}]\n"
+        f"Total Findings: [bold]{rep.total_findings}[/bold]\n"
+        f"Exfiltration Suspects: [bold]{len(rep.exfiltration_suspects)}[/bold]",
+        title="Security & Sandbox Audit",
+        border_style=sev_color,
+    ))
+
+    if rep.findings:
+        table = Table(title="Security Findings")
+        table.add_column("Severity", style="cyan")
+        table.add_column("Title", style="white")
+        table.add_column("Target", style="yellow")
+        table.add_column("PID", style="white")
+
+        for f in rep.findings:
+            f_color = "red" if f.severity == "CRITICAL" else ("yellow" if f.severity == "HIGH" else "white")
+            table.add_row(f"[{f_color}]{f.severity}[/{f_color}]", f.title, f.target, str(f.event.pid))
+
+        console.print(table)
+
+
+@app.command(name="assert", context_settings={"allow_extra_args": True, "ignore_unknown_options": True})
+def assert_command(
+    ctx: typer.Context,
+    no_missing_configs: bool = typer.Option(False, "--no-missing-configs", help="Fail if any configuration file lookups fail with ENOENT."),
+    no_unencrypted_http: bool = typer.Option(False, "--no-unencrypted-http", help="Fail if unencrypted outbound HTTP connections (port 80) occur."),
+    max_latency_ms: Optional[float] = typer.Option(None, "--max-latency-ms", help="Fail if any syscall exceeds latency limit."),
+    max_errors: int = typer.Option(0, "--max-errors", help="Maximum allowable error budget (default: 0)."),
+    output_json: Optional[Path] = typer.Option(None, "--output-json", help="Export trace to JSON on exit."),
+) -> None:
+    """Execute command in CI/CD mode and assert operational, performance, and security policies."""
+    cmd_args = ctx.args
+    if not cmd_args:
+        console.print("[bold red]Error:[/bold red] No command provided. Usage: `proctrace assert [OPTIONS] -- <cmd>`")
+        raise typer.Exit(1)
+
+    ring_buffer = RingBuffer(capacity=500_000)
+    runner = SubprocessRunner(
+        command=cmd_args,
+        ring_buffer=ring_buffer,
+        capture_output=True,
+    )
+
+    exit_code = runner.run()
+    events = ring_buffer.get_all()
+
+    guard = PolicyGuard(
+        no_missing_configs=no_missing_configs,
+        no_unencrypted_http=no_unencrypted_http,
+        max_latency_ms=max_latency_ms,
+        max_error_count=max_errors,
+    )
+    result = guard.evaluate(events)
+
+    if output_json:
+        export_to_json(events, output_json)
+
+    if result.passed and exit_code == 0:
+        console.print(f"[bold green][PASS] All policies passed successfully.[/bold green] (Command exited with code {exit_code})")
+        raise typer.Exit(0)
+    else:
+        console.print(f"[bold red][FAIL] CI Policy Assertion Failed![/bold red] ({result.total_violations} violation(s))")
+        for v in result.violations:
+            console.print(f"  [red]* [{v.policy_name}][/red] {v.message} (Target: {v.target})")
+        raise typer.Exit(1)
+

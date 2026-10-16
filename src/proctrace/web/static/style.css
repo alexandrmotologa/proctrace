@@ -695,3 +695,114 @@ body {
   border-radius: 10px;
   font-size: 11px;
 }
+
+/* Swimlanes Header */
+.swimlane-header {
+  background-color: #1c2128;
+  color: #58a6ff;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 6px 16px;
+  border-top: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+/* Remediation Guidance Cards */
+.remediation-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.remediation-card {
+  background-color: var(--bg-app);
+  border: 1px solid rgba(46, 160, 67, 0.4);
+  border-radius: 6px;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.rem-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #3fb950;
+}
+
+.rem-cause {
+  font-size: 12px;
+  color: var(--text-main);
+}
+
+.rem-steps {
+  margin-top: 6px;
+  font-size: 12px;
+}
+
+.rem-steps strong {
+  color: var(--text-white);
+}
+
+.rem-steps ul {
+  margin-left: 20px;
+  margin-top: 4px;
+}
+
+.rem-steps code {
+  background: var(--bg-card);
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: #79c0ff;
+  font-family: var(--font-mono);
+}
+
+/* Process Hierarchy Tree */
+.tree-root, .tree-children {
+  list-style: none;
+  padding-left: 16px;
+}
+
+.tree-root {
+  padding-left: 0;
+}
+
+.tree-node {
+  margin: 6px 0;
+  position: relative;
+}
+
+.tree-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background-color: var(--bg-app);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.tree-name {
+  color: var(--text-white);
+  font-weight: 600;
+}
+
+.tree-badge {
+  background-color: var(--bg-panel);
+  color: #58a6ff;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+}
+
+.tree-events {
+  color: var(--text-dim);
+  font-size: 11px;
+}
+

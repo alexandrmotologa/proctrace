@@ -93,7 +93,14 @@ proctrace/
 │       │   ├── __init__.py
 │       │   ├── models.py             # SyscallEvent, EventCategory, EventResult, ProcessInfo
 │       │   ├── ring_buffer.py        # 500k event circular buffer with microsecond index
-│       │   └── filter.py             # Event filter rules and error classification
+│       │   ├── filter.py             # Event filter rules and error classification
+│       │   └── diff.py               # TraceDiffer and regression analysis engine
+│       ├── analysis/
+│       │   ├── __init__.py
+│       │   └── explainer.py          # RootCauseExplainer diagnostic engine
+│       ├── security/
+│       │   ├── __init__.py
+│       │   └── auditor.py            # SecurityAuditor and PolicyGuard enforcement
 │       ├── collectors/
 │       │   ├── __init__.py
 │       │   ├── base.py               # Abstract BaseCollector interface
@@ -115,12 +122,15 @@ proctrace/
 │           ├── server.py             # FastAPI WebSocket and REST server
 │           └── static/
 │               ├── index.html        # DevTools style waterfall interface
-│               ├── app.js            # Canvas rendering and timeline navigation
+│               ├── app.js            # Canvas rendering, swimlanes, and triage modals
 │               └── style.css         # Dark theme UI styling
 └── tests/
     ├── test_models.py
     ├── test_ring_buffer.py
     ├── test_filter.py
+    ├── test_diff.py
+    ├── test_explainer.py
+    ├── test_security.py
     ├── test_export.py
     ├── test_collectors.py
     ├── test_runner.py
@@ -208,3 +218,36 @@ proctrace/
 - Test suite with pytest:
   - Unit tests for models, ring buffer, filtering, and exporters.
   - Integration tests for subprocess runner, collectors, CLI commands, and web endpoints.
+
+### Phase 8: Advanced Analysis, Regression Diffs, and CI/CD Policy Assertions
+- Trace Differ and Regression Detector (`proctrace.core.diff`):
+  - Baseline vs current trace comparison with `TraceDiffer`.
+  - Automatic detection of latency regressions exceeding 50% delta.
+  - Identification of newly broken file lookups (`ENOENT`) and socket failures.
+  - Surfacing added and removed network host:port endpoints.
+  - Markdown table generation and machine-readable JSON exports.
+  - CLI command: `proctrace diff <baseline> <current> [--output <report.md>] [--json]`.
+- Root Cause Explainer Engine (`proctrace.analysis.explainer`):
+  - Intelligent heuristic diagnostic engine parsing raw syscall failures into root causes.
+  - Missing `.env` detection with `.env.example` file template discovery and copy recommendations.
+  - Dynamic library load failures (`libssl`, `libcrypto`, `vcruntime140.dll`) mapped to exact package manager install commands (`apt`, `brew`, `vcredist`).
+  - Known service port connection refused diagnostics (PostgreSQL:5432, MySQL:3306, Redis:6379, MongoDB:27017) with service start commands.
+  - Permission denied (`EACCES`) triage with path ownership and `chmod` recommendations.
+  - CLI command: `proctrace explain <trace.json> [--json]`.
+- Security Auditor and Exfiltration Detector (`proctrace.security.auditor`):
+  - Sensitive credential file access auditing (`~/.ssh/id_rsa`, `~/.aws/credentials`, `~/.docker/config.json`, `/etc/shadow`, Windows SAM).
+  - Outbound data exfiltration chain detection: flags external socket connections occurring within 5 seconds of sensitive credential file reads.
+  - CLI command: `proctrace audit <trace.json> [--json]`.
+- CI/CD Operational Policy Guard (`proctrace.security.auditor`):
+  - Enforcement of zero-missing-config policies (`--no-missing-configs`).
+  - Block unencrypted plaintext HTTP traffic (`--no-unencrypted-http`).
+  - Strict maximum latency budgets per system call (`--max-latency-ms <ms>`).
+  - Maximum allowable error budgets (`--max-errors <count>`).
+  - Non-zero exit code (status 1) on assertion failure for automated pipeline integration.
+  - CLI command: `proctrace assert [OPTIONS] -- <command>`.
+- Enhanced Web Studio Features:
+  - Process Hierarchy Tree modal visualizing parent-child relationship chains.
+  - Process Swimlanes view mode grouping events by distinct PID.
+  - Remediation Triage modal directly displaying root-cause diagnostics and shell commands.
+  - Security and Exfiltration modal providing credential audit summaries and risk badges.
+

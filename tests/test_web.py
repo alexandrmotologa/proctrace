@@ -68,7 +68,28 @@ def test_web_studio_endpoints():
     assert res_chrome.status_code == 200
     assert "traceEvents" in res_chrome.json()
 
-    # 6. Clear buffer
+    # 6. Explanations
+    res_exp = client.get("/api/explanations")
+    assert res_exp.status_code == 200
+    assert isinstance(res_exp.json(), list)
+
+    # 7. Security audit
+    res_sec = client.get("/api/security")
+    assert res_sec.status_code == 200
+    assert "risk_score" in res_sec.json()
+
+    # 8. Process tree
+    res_tree = client.get("/api/tree")
+    assert res_tree.status_code == 200
+    assert len(res_tree.json()) == 1
+    assert res_tree.json()[0]["pid"] == 123
+
+    # 9. Diff endpoint
+    res_diff = client.post("/api/diff", json={"events": []})
+    assert res_diff.status_code == 200
+    assert "summary" in res_diff.json()
+
+    # 10. Clear buffer
     res_clear = client.post("/api/clear")
     assert res_clear.status_code == 200
     assert rb.count == 0
